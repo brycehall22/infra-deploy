@@ -33,7 +33,7 @@ jobs:
           terraform_wrapper: true
 
       - name: Configure AWS Creds
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722
         with:
           role-to-assume: arn:aws:iam::211507861780:role/Terraform-AWS
           aws-region: us-east-2
