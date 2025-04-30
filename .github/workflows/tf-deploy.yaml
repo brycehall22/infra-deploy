@@ -1,4 +1,4 @@
-# Bryce Hall - Terraform AWS CI/CD Workflow
+# Bryce Hall - Terraform AWS
 name: "Terraform AWS"
 
 on:
