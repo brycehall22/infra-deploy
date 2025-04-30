@@ -1,121 +1,129 @@
 name: "Terraform AWS"
+
 on:
   pull_request:
-    branches: 
+    branches:
       - main
-    push:
-      paths:
-        - 'feature/**'
-        - 'feat/**'
-        - 'fix/**'
-        - 'wip/**'
+    paths:
+      - 'feature/**'
+      - 'feat/**'
+      - 'fix/**'
+      - 'wip/**'
+
 jobs:
   plan:
     name: IAC - PLAN
     runs-on: ubuntu-latest
-permissions:
-  id-token: write
-  contents: read
-  pull-requests: write
-- name: Git Clone the Repo
-  uses: actions/checkout@v4
-- name: Setup Terraform
-  uses: hashicorp/setup-terraform@v3
-  with: 
-    terraform_version: "1.6.1"
-    terraform_wrapper: true
-- name: Configure AWS Creds
-  uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722
-  with:
-    role-to-assume: arn:aws:iam::202533501269:role/TerraformDeploy
-    aws-region: eu-west-2
-- name: Terraform Init
-  id: init
-  run: terraform init -input=false
-- name: terraform Validate
-  id: validate
-  run: terraform validate -no-color
-- name: Terraform Plan
-  id: plan
-  run: terraform plan -input=false -no-color -out=tfplan
-  continue-on-error: true
-- name Upload Terraform Plan Artifact
-  if: github.even_name == 'pull_request' && github.event.outcome == 'success'
-  uses: actions/upload-artifact@v4
-  with:
-    name: tfplan
-    path: tfplan
-    retention-days: 1
-- uses: actions/github-script@v7 
-  if: github.event_name == 'pull_request'
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    script: |
-      // Check if the Terraform plan was successful
-      const planStatus = "${{ steps.plan.outcome }}" === "success"
-        ? "Plan succeeded"
-        : "Plan failed";
 
-      // Create a message to ask for approval if the plan succeeded
-      const approvalMessage = planStatus === "Plan succeeded"
-        ? "\n\n### Changes detected! Please review the plan and approve the apply job in GitHub Actions."
-        : "";
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
 
-      // Build the full comment body
-      const commentBody = [
-        "#### Terraform Format and Style: not checked",
-        `#### Terraform Initialization: \`${{ steps.init.outcome }}\``,
-        `#### Terraform Validation: \`${{ steps.validate.outcome }}\``,
-        "",
-        `#### Terraform Plan Status: ${planStatus}`,
-        "",
-        "Terraform plan was uploaded as an artifact.",
-        `[View it in the Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
-        approvalMessage,
-        "",
-        `*Pusher: @${{ github.actor }}, Action: ${{ github.event_name }}, Workflow: ${{ github.workflow }}*`
-      ].join("\n");
+    steps:
+      - name: Git Clone the Repo
+        uses: actions/checkout@v4
 
-      // Post the comment to the pull request
-      await github.rest.issues.createComment({
-        issue_number: context.issue.number,
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        body: commentBody
-      });
-- name: Terraform Apply
-  id: apply
-  run: terraform apply -auto-approve -input=false tfplan
-  continue-on-error: true 
-- uses: actions/github-script@v7 
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    script: |
-      // Get the result of the apply step
-      const applyOutcome = "${{ steps.apply.outcome }}";
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.1"
+          terraform_wrapper: true
 
-      // Get the output of the apply command (or show a default message)
-      const applyOutput = process.env.APPLY || 'No output available';
+      - name: Configure AWS Creds
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::202533501269:role/TerraformDeploy
+          aws-region: eu-west-2
 
-      // Build the comment body
-      const commentBody = [
-        `#### Terraform Apply \`${applyOutcome}\``,
-        "<details><summary>Show Apply Output</summary>",
-        "",
-        "```",
-        applyOutput,
-        "```",
-        "</details>",
-        "",
-        `*Applied by: @${{ github.actor }}*`
-      ].join("\n");
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
 
-      // Post the comment to the pull request
-      await github.rest.issues.createComment({
-        issue_number: context.issue.number,
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        body: commentBody
-      });
-    env: 
-      APPLY: "terraform\n${{ steps.apply.outputs.stdout }}"
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -input=false -no-color -out=tfplan
+        continue-on-error: true
+
+      - name: Upload Terraform Plan Artifact
+        if: github.event_name == 'pull_request' && steps.plan.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+          retention-days: 1
+
+      - name: Comment on PR with Plan Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const planStatus = "${{ steps.plan.outcome }}" === "success"
+              ? "Plan succeeded"
+              : "Plan failed";
+
+            const approvalMessage = planStatus === "Plan succeeded"
+              ? "\n\n### Changes detected! Please review the plan and approve the apply job in GitHub Actions."
+              : "";
+
+            const commentBody = [
+              "#### Terraform Format and Style: not checked",
+              `#### Terraform Initialization: \`${{ steps.init.outcome }}\``,
+              `#### Terraform Validation: \`${{ steps.validate.outcome }}\``,
+              "",
+              `#### Terraform Plan Status: ${planStatus}`,
+              "",
+              "Terraform plan was uploaded as an artifact.",
+              `[View it in the Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
+              approvalMessage,
+              "",
+              `*Pusher: @${{ github.actor }}, Action: ${{ github.event_name }}, Workflow: ${{ github.workflow }}*`
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
+
+      - name: Terraform Apply
+        id: apply
+        if: github.event_name == 'pull_request'
+        run: terraform apply -auto-approve -input=false tfplan
+        continue-on-error: true
+
+      - name: Comment on PR with Apply Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const applyOutcome = "${{ steps.apply.outcome }}";
+            const applyOutput = process.env.APPLY || 'No output available';
+
+            const commentBody = [
+              `#### Terraform Apply \`${applyOutcome}\``,
+              "<details><summary>Show Apply Output</summary>",
+              "",
+              "```",
+              applyOutput,
+              "```",
+              "</details>",
+              "",
+              `*Applied by: @${{ github.actor }}*`
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
+        env:
+          APPLY: "terraform\n${{ steps.apply.outputs.stdout }}"
