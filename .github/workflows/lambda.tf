@@ -1,3 +1,4 @@
+# Bryce Hall
 resource "aws_lambda_function" "brycehall_lambda" {
   function_name = "brycehall_lambda"
   role          = aws_iam_role.lambda_exec_role.arn
