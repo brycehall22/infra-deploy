@@ -1,4 +1,5 @@
-# Bryce Hall - Terraform AWS CI/CD Workflow
+# Bryce Hall - Terraform AWS CI/CD Workflow 
+# This workflow is designed to run Terraform commands for AWS infrastructure
 name: "Terraform AWS"
 
 on:
