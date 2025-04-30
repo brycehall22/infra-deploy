@@ -5,11 +5,12 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'feature/**'
-      - 'feat/**'
-      - 'fix/**'
-      - 'wip/**'
+    push:
+      paths:
+        - 'feature/**'
+        - 'feat/**'
+        - 'fix/**'
+        - 'wip/**'
 
 jobs:
   plan:
@@ -34,10 +35,10 @@ jobs:
       - name: Configure AWS Creds
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::202533501269:role/TerraformDeploy
-          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::211507861780:role/Terraform-AWS
+          aws-region: us-east-2
 
-      - name: Terraform Init
+      - name: Terraform init
         id: init
         run: terraform init -input=false
 
