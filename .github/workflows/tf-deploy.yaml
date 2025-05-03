@@ -39,8 +39,29 @@ jobs:
           role-to-assume: arn:aws:iam::211507861780:role/Terraform-AWS
           aws-region: us-east-2
 
+
+      - name: Debug - List directories
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Repository root contents:"
+          ls -la
+          echo "Subdirectories:"
+          find . -type d -maxdepth 3 | sort
+          echo "Terraform files:"
+          find . -name "*.tf" | sort
+
       - name: Change to Terraform directory
         run: cd .github/workflows
+      
+      - name: Debug - List directories
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Repository root contents:"
+          ls -la
+          echo "Subdirectories:"
+          find . -type d -maxdepth 3 | sort
+          echo "Terraform files:"
+          find . -name "*.tf" | sort
 
       - name: Terraform init
         id: init
