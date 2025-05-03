@@ -6,12 +6,12 @@ on:
   pull_request:
     branches:
       - main
-    push:
-      paths:
-        - 'feature/**'
-        - 'feat/**'
-        - 'fix/**'
-        - 'wip/**'
+  push:
+    paths:
+      - 'feature/**'
+      - 'feat/**'
+      - 'fix/**'
+      - 'wip/**'
 
 jobs:
   plan:
@@ -38,6 +38,9 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::211507861780:role/Terraform-AWS
           aws-region: us-east-2
+
+      - name: Change to Terraform directory
+        run: cd .github/workflows
 
       - name: Terraform init
         id: init
