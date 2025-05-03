@@ -39,49 +39,28 @@ jobs:
           role-to-assume: arn:aws:iam::211507861780:role/Terraform-AWS
           aws-region: us-east-2
 
-
-      - name: Debug - List directories
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Repository root contents:"
-          ls -la
-          echo "Subdirectories:"
-          find . -type d -maxdepth 3 | sort
-          echo "Terraform files:"
-          find . -name "*.tf" | sort
-
-      - name: Change to Terraform directory
-        run: cd .github/workflows
-      
-      - name: Debug - List directories
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Repository root contents:"
-          ls -la
-          echo "Subdirectories:"
-          find . -type d -maxdepth 3 | sort
-          echo "Terraform files:"
-          find . -name "*.tf" | sort
-
       - name: Terraform init
         id: init
         run: terraform init -input=false
+        working-directory: ./.github/workflows
 
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
+        working-directory: ./.github/workflows
 
       - name: Terraform Plan
         id: plan
         run: terraform plan -input=false -no-color -out=tfplan
         continue-on-error: true
+        working-directory: ./.github/workflows
 
       - name: Upload Terraform Plan Artifact
         if: github.event_name == 'pull_request' && steps.plan.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: tfplan
+          path: ./.github/workflows/tfplan
           retention-days: 1
 
       - name: Comment on PR with Plan Results
@@ -124,6 +103,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: terraform apply -auto-approve -input=false tfplan
         continue-on-error: true
+        working-directory: ./.github/workflows
 
       - name: Comment on PR with Apply Results
         if: github.event_name == 'pull_request'
